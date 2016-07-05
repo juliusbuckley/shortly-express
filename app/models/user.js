@@ -2,8 +2,6 @@ var db = require('../config');
 var bcrypt = require('bcrypt-nodejs');
 var Promise = require('bluebird');
 
-
-
 var User = db.Model.extend({
   tableName: 'users',
   hasTimestamps: true,
@@ -11,17 +9,6 @@ var User = db.Model.extend({
   initialize: function() {
     this.on('creating', this.hashGenerator, this);
   },
-
-  // userExists: function() {
-  //   return new Promise(function(resolve, reject) {
-  //     bcrypt.compare(this.attributes.password, hash, function(err, res) {
-  //       if (err) {
-  //         reject(err);
-  //       }
-  //       resolve(res);
-  //     });   
-  //   });
-  // },
 
   hashGenerator: function(model, attrs, options) {
     return new Promise(function(resolve, reject) {

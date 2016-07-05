@@ -11,7 +11,6 @@ var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
 var bcrypt = require('bcrypt-nodejs');
-var jwt = require('jsonwebtoken');
 var app = express();
 
 app.set('views', __dirname + '/views');
@@ -23,25 +22,24 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
-
 app.get('/', 
 function(req, res) {
   res.render('index');
 });
 
-app.get('/create', 
+app.get('/create', util.checkUser,
 function(req, res) {
   res.render('index');
 });
 
-app.get('/links', 
+app.get('/links', util.checkUser,
 function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.status(200).send(links.models);
   });
 });
 
-app.post('/links', 
+app.post('/links', util.checkUser,
 function(req, res) {
   var uri = req.body.url;
 
@@ -52,7 +50,6 @@ function(req, res) {
 
   new Link({ url: uri }).fetch().then(function(found) {
     if (found) {
-      console.log('found', found);
       res.status(200).send(found.attributes);
     } else {
       util.getUrlTitle(uri, function(err, title) {
@@ -97,29 +94,11 @@ function(req, res) {
     password: password,
   })
   .then(function(model) {
-    //create token here. model.attributes.username
-    // var token = jwt.sign(model.attributes.username, 'hello');
-    // var token = jwt.encode({
-    //   iss: model.attributes.username,
-    // }, 'hello');
 
-    // res.json({
-    //   token: token,
-    //   user: model.attributes.username
-    // });
+    util.createCookie(model, req, res);
 
-    res.headers.authorization = 'hellohello';
-
-    // res.setHeader({Authorization: 'Bearer ' + token});
-    //Authorization
-    //.json
-    //.write
-
-    // ({
-    //   success: true,
-    //   message: 'Enjoy your token!',
-    //   token: token
-    // });
+    //util.checkUser(signingKey, req, res);
+    res.setHeader('location', '/');
 
     res.redirect('/');
   })
@@ -137,17 +116,8 @@ app.post('/login', function(req, res) {
       if (found) {
         bcrypt.compare(password, found.attributes.password /*hash*/, function(err, matches) {
           if ( matches ) {
-            // json token set to true for logged in user
-            var token = jwt.encode({
-              iss: model.attributes.username,
-            }, 'hello');
-
-            res.json({
-              token: token,
-              user: model.attributes.username
-            });
-
-            // res.setHeader({Authorization: 'Bearer ' + token});
+            
+            util.createCookie(found, req, res);
 
             res.redirect('/');            
           } else {
