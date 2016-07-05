@@ -10,7 +10,8 @@ var User = require('./app/models/user');
 var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
-
+var bcrypt = require('bcrypt-nodejs');
+var jwt = require('jsonwebtoken');
 var app = express();
 
 app.set('views', __dirname + '/views');
@@ -51,6 +52,7 @@ function(req, res) {
 
   new Link({ url: uri }).fetch().then(function(found) {
     if (found) {
+      console.log('found', found);
       res.status(200).send(found.attributes);
     } else {
       util.getUrlTitle(uri, function(err, title) {
@@ -94,7 +96,31 @@ function(req, res) {
     username: username,
     password: password,
   })
-  .then(function() {
+  .then(function(model) {
+    //create token here. model.attributes.username
+    // var token = jwt.sign(model.attributes.username, 'hello');
+    // var token = jwt.encode({
+    //   iss: model.attributes.username,
+    // }, 'hello');
+
+    // res.json({
+    //   token: token,
+    //   user: model.attributes.username
+    // });
+
+    res.headers.authorization = 'hellohello';
+
+    // res.setHeader({Authorization: 'Bearer ' + token});
+    //Authorization
+    //.json
+    //.write
+
+    // ({
+    //   success: true,
+    //   message: 'Enjoy your token!',
+    //   token: token
+    // });
+
     res.redirect('/');
   })
   .catch(function(err) {
@@ -106,11 +132,28 @@ app.post('/login', function(req, res) {
   var username = req.body.username;
   var password = req.body.password;
 
-  new User({ username: username, password: password }).fetch()
+  new User({ username: username }).fetch()
     .then(function(found) {
-      console.log(found);
       if (found) {
-        res.redirect('/');
+        bcrypt.compare(password, found.attributes.password /*hash*/, function(err, matches) {
+          if ( matches ) {
+            // json token set to true for logged in user
+            var token = jwt.encode({
+              iss: model.attributes.username,
+            }, 'hello');
+
+            res.json({
+              token: token,
+              user: model.attributes.username
+            });
+
+            // res.setHeader({Authorization: 'Bearer ' + token});
+
+            res.redirect('/');            
+          } else {
+            res.redirect('/login');
+          }
+        });
       } else {
         res.redirect('/login');
       }
